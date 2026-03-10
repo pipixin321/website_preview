@@ -1,41 +1,1134 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Launch Ready</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <main class="page">
-      <section class="hero">
-        <p class="eyebrow">Static Site Starter</p>
-        <h1>Ship a focused landing page fast.</h1>
-        <p class="lede">
-          Replace this copy with the user's product, portfolio, event, or campaign
-          message, then publish directly to GitHub Pages.
-        </p>
-        <div class="actions">
-          <a class="button primary" href="#details">See details</a>
-          <a class="button secondary" href="mailto:hello@example.com">Contact</a>
-        </div>
-      </section>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nanobot 消息全流程可视化</title>
+  <style>
+    :root {
+      --bg: #f6efe4;
+      --bg-deep: #e9dbc5;
+      --panel: rgba(255, 250, 241, 0.82);
+      --panel-strong: rgba(255, 248, 234, 0.94);
+      --ink: #132229;
+      --muted: #5d6b70;
+      --line: rgba(19, 34, 41, 0.12);
+      --accent: #cf5f3b;
+      --accent-soft: rgba(207, 95, 59, 0.14);
+      --secondary: #0f8b8d;
+      --secondary-soft: rgba(15, 139, 141, 0.12);
+      --gold: #c99534;
+      --shadow: 0 22px 55px rgba(45, 41, 35, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max-width: 1360px;
+      --font-main: "Avenir Next", "Segoe UI Variable", "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      --font-mono: "SF Mono", "IBM Plex Mono", "Menlo", monospace;
+    }
 
-      <section class="details" id="details">
-        <article>
-          <h2>Clear structure</h2>
-          <p>Use one hero, a few benefit blocks, and a concrete call to action.</p>
-        </article>
-        <article>
-          <h2>Safe defaults</h2>
-          <p>All assets are local, paths are relative, and the page is GitHub Pages friendly.</p>
-        </article>
-        <article>
-          <h2>Easy to expand</h2>
-          <p>Add sections, imagery, or scripts without changing the deployment flow.</p>
-        </article>
-      </section>
-    </main>
-    <script src="./script.js"></script>
-  </body>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-main);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(207, 95, 59, 0.18), transparent 26rem),
+        radial-gradient(circle at top right, rgba(15, 139, 141, 0.16), transparent 24rem),
+        linear-gradient(180deg, #fbf6ee 0%, var(--bg) 40%, #efe6d8 100%);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(19, 34, 41, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(19, 34, 41, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 86%);
+    }
+
+    .shell {
+      position: relative;
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 38px;
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(255, 248, 234, 0.98), rgba(246, 239, 228, 0.92)),
+        linear-gradient(160deg, var(--accent-soft), transparent 42%);
+      border: 1px solid rgba(19, 34, 41, 0.08);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      right: -90px;
+      top: -110px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(15, 139, 141, 0.26), rgba(15, 139, 141, 0.04) 65%, transparent 70%);
+      filter: blur(8px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(19, 34, 41, 0.06);
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      max-width: 780px;
+      font-size: clamp(32px, 6vw, 68px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 28px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metric {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px solid rgba(19, 34, 41, 0.07);
+      backdrop-filter: blur(10px);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin: 22px 0 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      border: 1px solid rgba(19, 34, 41, 0.08);
+      box-shadow: 0 12px 28px rgba(45, 41, 35, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .controls-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      font: inherit;
+    }
+
+    .action {
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: rgba(19, 34, 41, 0.07);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px rgba(19, 34, 41, 0.06);
+    }
+
+    .action.primary {
+      background: linear-gradient(135deg, var(--accent), #b9492a);
+      color: #fff;
+      box-shadow: 0 12px 22px rgba(207, 95, 59, 0.28);
+    }
+
+    .action:hover {
+      transform: translateY(-1px);
+    }
+
+    .chipset {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(19, 34, 41, 0.06);
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid transparent;
+      transition: all 180ms ease;
+    }
+
+    .chip.active {
+      background: var(--secondary-soft);
+      color: var(--secondary);
+      border-color: rgba(15, 139, 141, 0.22);
+    }
+
+    .progress-wrap {
+      min-width: 260px;
+      flex: 1;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(19, 34, 41, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 12%;
+      background: linear-gradient(90deg, var(--accent), var(--gold), var(--secondary));
+      border-radius: inherit;
+      transition: width 300ms ease;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(19, 34, 41, 0.08);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 18px 36px rgba(45, 41, 35, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .timeline-panel {
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .timeline-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .timeline-head h2,
+    .detail-head h2,
+    .board-head h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.03em;
+    }
+
+    .timeline-head p,
+    .detail-head p,
+    .board-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .lane {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--step-count, 10), minmax(220px, 1fr));
+      gap: 16px;
+      overflow-x: auto;
+      padding: 8px 6px 24px;
+      scroll-snap-type: x proximity;
+    }
+
+    .lane::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 82px;
+      height: 3px;
+      background:
+        linear-gradient(90deg, rgba(19, 34, 41, 0.06), rgba(19, 34, 41, 0.18), rgba(19, 34, 41, 0.06));
+    }
+
+    .step {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      min-height: 220px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(19, 34, 41, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 248, 236, 0.92));
+      box-shadow: 0 14px 30px rgba(45, 41, 35, 0.08);
+      scroll-snap-align: start;
+      transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      top: 67px;
+      right: -14px;
+      width: 30px;
+      height: 30px;
+      border-top: 3px solid rgba(19, 34, 41, 0.18);
+      border-right: 3px solid rgba(19, 34, 41, 0.18);
+      transform: rotate(45deg);
+      background: var(--bg);
+      z-index: -1;
+    }
+
+    .step:last-child::before {
+      display: none;
+    }
+
+    .step.active {
+      transform: translateY(-6px);
+      border-color: rgba(207, 95, 59, 0.26);
+      background:
+        linear-gradient(180deg, rgba(255, 251, 244, 1), rgba(255, 243, 232, 0.98)),
+        radial-gradient(circle at top right, rgba(207, 95, 59, 0.16), transparent 12rem);
+      box-shadow: 0 20px 44px rgba(207, 95, 59, 0.12);
+    }
+
+    .step.optional {
+      background:
+        linear-gradient(180deg, rgba(244, 251, 250, 0.95), rgba(235, 246, 245, 0.98));
+    }
+
+    .step-num {
+      display: inline-flex;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      background: rgba(19, 34, 41, 0.08);
+      color: var(--ink);
+    }
+
+    .step.active .step-num {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .step-tag {
+      display: inline-flex;
+      margin-top: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(19, 34, 41, 0.06);
+    }
+
+    .step h3 {
+      margin: 14px 0 8px;
+      font-size: 22px;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+    }
+
+    .step p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .step code {
+      display: inline-block;
+      margin-top: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(19, 34, 41, 0.05);
+      color: var(--ink);
+    }
+
+    .detail-panel {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .detail-card {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      background: var(--panel-strong);
+      border: 1px solid rgba(19, 34, 41, 0.08);
+    }
+
+    .detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(19, 34, 41, 0.06);
+      color: var(--muted);
+    }
+
+    .detail-title {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -0.04em;
+    }
+
+    .detail-lead {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .change-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .change {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(19, 34, 41, 0.04);
+      border: 1px solid rgba(19, 34, 41, 0.06);
+    }
+
+    .change strong {
+      display: block;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .change p {
+      margin: 0;
+      line-height: 1.7;
+    }
+
+    .file-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .file {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: rgba(15, 139, 141, 0.08);
+      color: #0d6769;
+      border: 1px solid rgba(15, 139, 141, 0.12);
+    }
+
+    .board {
+      margin-top: 18px;
+      padding: 24px;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .state-box {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(19, 34, 41, 0.07);
+      background: linear-gradient(180deg, rgba(255, 251, 245, 0.9), rgba(248, 241, 231, 0.88));
+    }
+
+    .state-box h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .state-box p {
+      margin: 0;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend i {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .legend .l1 {
+      background: var(--accent);
+    }
+
+    .legend .l2 {
+      background: var(--secondary);
+    }
+
+    .legend .l3 {
+      background: var(--gold);
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(19, 34, 41, 0.05);
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1120px) {
+      .hero-grid,
+      .board-grid,
+      .main-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(var(--max-width), calc(100vw - 20px));
+        padding-top: 18px;
+      }
+
+      .hero,
+      .timeline-panel,
+      .detail-panel,
+      .board {
+        padding: 18px;
+      }
+
+      .hero-grid,
+      .board-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-head {
+        display: block;
+      }
+
+      .lane {
+        grid-template-columns: repeat(var(--step-count, 10), minmax(250px, 1fr));
+      }
+
+      h1 {
+        line-height: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">nanobot / end-to-end flow</div>
+      <h1>从用户发消息到机器人回消息，整条链路如何流动</h1>
+      <p>
+        这个页面把 nanobot 的真实运行路径拆成一条可播放的流程带。你可以逐步查看每个模块做了什么、
+        哪些对象被创建、哪些文件会变化，以及工具调用和定时任务是怎样重新汇入同一个 Agent 内核的。
+      </p>
+      <div class="hero-grid">
+        <div class="metric">
+          <strong>10</strong>
+          <span>主流程节点，从用户输入到渠道回发。</span>
+        </div>
+        <div class="metric">
+          <strong>3</strong>
+          <span>关键状态域：队列、会话、上下文/模型调用。</span>
+        </div>
+        <div class="metric">
+          <strong>1</strong>
+          <span>统一内核：渠道、Cron、Heartbeat 最终都走 `AgentLoop`。</span>
+        </div>
+        <div class="metric">
+          <strong>可选</strong>
+          <span>工具调用、MCP、Subagent 会插入额外回路，但不会改变主干结构。</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls panel">
+      <div class="controls-group">
+        <button class="action" id="prevBtn">上一步</button>
+        <button class="action primary" id="playBtn">自动播放</button>
+        <button class="action" id="nextBtn">下一步</button>
+      </div>
+      <div class="chipset" id="modeSwitch">
+        <button class="chip active" data-mode="main">主回复链路</button>
+        <button class="chip" data-mode="optional">含工具调用分支</button>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="stepCounter">Step 1 / 10</span>
+          <span id="stepLayer">用户侧</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <div class="timeline-panel panel">
+        <div class="timeline-head">
+          <div>
+            <h2>流程带</h2>
+            <p>点击任意节点查看其输入、内部变化、输出，以及对应的仓库模块。</p>
+          </div>
+        </div>
+        <div class="lane" id="timeline"></div>
+      </div>
+
+      <aside class="detail-panel panel">
+        <div class="detail-head">
+          <h2>步骤详情</h2>
+          <p>这里展示当前步骤的状态变化，重点是“哪些对象变化了”和“下一步交给谁”。</p>
+        </div>
+        <div class="detail-card">
+          <div class="detail-meta" id="detailMeta"></div>
+          <h3 class="detail-title" id="detailTitle"></h3>
+          <p class="detail-lead" id="detailLead"></p>
+        </div>
+        <div class="change-grid" id="changeGrid"></div>
+        <div class="detail-card">
+          <div class="pill">对应模块</div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="board panel">
+      <div class="board-head">
+        <h2>状态变化看板</h2>
+        <p>不管消息从 Telegram、WhatsApp、CLI 还是 Cron 进来，最终都围绕下面这些状态域流转。</p>
+      </div>
+      <div class="board-grid" id="boardGrid"></div>
+      <div class="legend">
+        <span><i class="l1"></i>消息载荷移动</span>
+        <span><i class="l2"></i>状态或文件持久化</span>
+        <span><i class="l3"></i>模型决策与工具回路</span>
+      </div>
+      <div class="footer-note">
+        额外说明：工具调用不是一条并行管线，而是 `Provider.chat()` 返回 tool calls 之后，
+        `AgentLoop` 在同一轮对话中执行工具、追加 `tool` 消息，再继续把结果送回模型。Cron、Heartbeat、Subagent
+        只是不同触发源，最后仍回到同一个消息处理内核。
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        id: 1,
+        mode: "main",
+        layer: "用户侧",
+        tag: "entry",
+        title: "用户发送消息",
+        short: "用户在 CLI 或聊天平台输入一条消息。",
+        module: "外部输入",
+        lead: "消息还没有进入 nanobot 内核，此时只是聊天平台或终端中的原始文本/媒体输入。",
+        input: "文本、图片、语音、附件，来源可能是 CLI、Telegram、WhatsApp、Slack 等。",
+        mutate: "用户态输入变成平台事件，但 nanobot 还未创建 `InboundMessage`。",
+        output: "等待渠道适配层接管。",
+        files: ["终端 / 聊天平台", "nanobot/channels/*"],
+        board: {
+          "Channel": "平台侧监听到一条新消息。",
+          "MessageBus": "还没有任何入队数据。",
+          "Session": "无变化。",
+          "Prompt": "尚未构造。",
+          "LLM": "未调用。",
+          "Tool": "未触发。",
+          "Outbound": "无出站消息。",
+          "Persistence": "无文件变化。"
+        }
+      },
+      {
+        id: 2,
+        mode: "main",
+        layer: "渠道层",
+        tag: "adapter",
+        title: "Channel 适配器接收消息",
+        short: "渠道 SDK 把平台事件转为统一消息格式。",
+        module: "BaseChannel / 各平台 Channel",
+        lead: "各渠道实现自己的接入逻辑，但都会调用统一的 `_handle_message()`，最后构造 `InboundMessage`。",
+        input: "平台事件对象，例如 Telegram Update、WhatsApp bridge JSON。",
+        mutate: "执行 allowlist 校验，抽取 `sender_id`、`chat_id`、`content`、`media`、`metadata`。",
+        output: "构造统一的 `InboundMessage`。",
+        files: ["nanobot/channels/base.py", "nanobot/channels/telegram.py", "nanobot/channels/whatsapp.py"],
+        board: {
+          "Channel": "平台事件被归一化为统一字段。",
+          "MessageBus": "`publish_inbound()` 准备入队。",
+          "Session": "无变化。",
+          "Prompt": "尚未构造。",
+          "LLM": "未调用。",
+          "Tool": "未触发。",
+          "Outbound": "无出站。",
+          "Persistence": "媒体文件可能先落盘。"
+        }
+      },
+      {
+        id: 3,
+        mode: "main",
+        layer: "总线层",
+        tag: "queue",
+        title: "消息进入 MessageBus",
+        short: "所有渠道都先写入异步队列，和 Agent 解耦。",
+        module: "MessageBus",
+        lead: "渠道层与 Agent 内核通过 `inbound` / `outbound` 两个异步队列解耦，简化了多渠道并发接入。",
+        input: "`InboundMessage`。",
+        mutate: "`bus.inbound` 队列长度 +1，等待 AgentLoop 消费。",
+        output: "AgentLoop 下一次轮询时取走该消息。",
+        files: ["nanobot/bus/events.py", "nanobot/bus/queue.py"],
+        board: {
+          "Channel": "渠道层处理完毕，进入公共总线。",
+          "MessageBus": "`inbound` 队列新增一条待处理消息。",
+          "Session": "无变化。",
+          "Prompt": "尚未构造。",
+          "LLM": "未调用。",
+          "Tool": "未触发。",
+          "Outbound": "仍为空。",
+          "Persistence": "无文件变化。"
+        }
+      },
+      {
+        id: 4,
+        mode: "main",
+        layer: "Agent 内核",
+        tag: "dispatch",
+        title: "AgentLoop 取消息并分派",
+        short: "AgentLoop 消费队列消息，进入统一处理入口。",
+        module: "AgentLoop.run / _process_message",
+        lead: "这里是整个项目的主干。`/stop`、`/new`、`/help`、普通消息、system 消息都在这里分流。当前实现有全局 `_processing_lock`，所以处理是全局串行的。",
+        input: "`InboundMessage`。",
+        mutate: "确定 session key，设置工具上下文，必要时触发命令处理和后台 consolidation。",
+        output: "准备读取 session 历史并组装 prompt。",
+        files: ["nanobot/agent/loop.py", "nanobot/session/manager.py"],
+        board: {
+          "Channel": "消息正式进入 AI 内核。",
+          "MessageBus": "该条消息从 `inbound` 被消费。",
+          "Session": "查找或创建当前会话。",
+          "Prompt": "开始准备历史上下文。",
+          "LLM": "尚未调用。",
+          "Tool": "工具上下文被设置，但未执行。",
+          "Outbound": "无出站。",
+          "Persistence": "如果 `/new`，可能触发归档。"
+        }
+      },
+      {
+        id: 5,
+        mode: "main",
+        layer: "上下文层",
+        tag: "context",
+        title: "构建 Session 历史与 Prompt",
+        short: "把 bootstrap、memory、skills、历史消息合并成模型输入。",
+        module: "ContextBuilder + SessionManager + MemoryStore",
+        lead: "此处会从 workspace 读取 `AGENTS.md / SOUL.md / USER.md / TOOLS.md`，再拼接 MEMORY、技能摘要、当前运行时信息和历史对话。",
+        input: "当前消息 + session 历史 + workspace 文件。",
+        mutate: "生成 `messages[]`，其中 system prompt 包含身份、规则、记忆、技能摘要；user 消息前面会插入 runtime context。",
+        output: "一组可直接发送给 LLM 的 messages。",
+        files: ["nanobot/agent/context.py", "nanobot/agent/memory.py", "nanobot/agent/skills.py", "nanobot/session/manager.py"],
+        board: {
+          "Channel": "与渠道无关，进入纯 Agent 上下文拼装。",
+          "MessageBus": "无变化。",
+          "Session": "读取 JSONL 历史，截取未归档部分。",
+          "Prompt": "system + history + current user message 完成。",
+          "LLM": "下一步准备调用。",
+          "Tool": "尚未执行。",
+          "Outbound": "无出站。",
+          "Persistence": "读取 workspace 里的 bootstrap/memory/skills。"
+        }
+      },
+      {
+        id: 6,
+        mode: "main",
+        layer: "Provider 层",
+        tag: "llm",
+        title: "Provider 发起模型调用",
+        short: "通过 LiteLLM 或直连 Provider 调用模型。",
+        module: "LiteLLMProvider / CustomProvider / AzureOpenAIProvider",
+        lead: "Provider 负责兼容不同厂商的模型命名、参数差异、OAuth、prompt caching、tool call id 规范化等细节。",
+        input: "`messages[]` + tool definitions + model config。",
+        mutate: "发起 `chat()` 请求，等待模型返回文本或 tool calls。",
+        output: "`LLMResponse`，可能是最终答案，也可能是需要执行工具。",
+        files: ["nanobot/providers/litellm_provider.py", "nanobot/providers/custom_provider.py", "nanobot/providers/registry.py"],
+        board: {
+          "Channel": "无变化。",
+          "MessageBus": "无变化。",
+          "Session": "尚未写回。",
+          "Prompt": "被冻结为本轮模型输入。",
+          "LLM": "产生 `content` 或 `tool_calls`。",
+          "Tool": "如果返回工具请求，则进入下一分支。",
+          "Outbound": "无出站。",
+          "Persistence": "无文件变化。"
+        }
+      },
+      {
+        id: 7,
+        mode: "optional",
+        layer: "工具回路",
+        tag: "tools",
+        title: "可选：执行 Tools / MCP / Subagent",
+        short: "模型先调用工具，再把工具结果送回模型继续推理。",
+        module: "ToolRegistry + 各类 Tool + MCP",
+        lead: "这一步不是独立管线，而是嵌在 AgentLoop 的单轮对话里。工具结果会被追加为 `tool` 消息，模型继续下一轮推理，直到返回最终文本。",
+        input: "`tool_calls`，例如 `read_file`、`exec`、`web_search`、`message`、`spawn`、`mcp_*`。",
+        mutate: "执行工具，产生工具输出；如果 `spawn`，后台子代理会在完成后通过 `system` 消息重新回到主 Agent。",
+        output: "新的 `tool` 消息和可能的后续模型调用。",
+        files: ["nanobot/agent/tools/registry.py", "nanobot/agent/tools/filesystem.py", "nanobot/agent/tools/shell.py", "nanobot/agent/tools/mcp.py", "nanobot/agent/subagent.py"],
+        board: {
+          "Channel": "`message` 工具可直接向用户发阶段性通知。",
+          "MessageBus": "可能额外产生 system/outbound 消息。",
+          "Session": "工具调用和结果会记录进会话。",
+          "Prompt": "`assistant(tool_calls)` + `tool(result)` 追加到消息序列。",
+          "LLM": "进入多轮 tool-use loop。",
+          "Tool": "真正发生文件、命令、网络或子任务操作。",
+          "Outbound": "可能有进度消息或直接发送。",
+          "Persistence": "可能读写 workspace、cron、memory 等。"
+        }
+      },
+      {
+        id: 8,
+        mode: "main",
+        layer: "会话层",
+        tag: "session",
+        title: "保存本轮消息并触发记忆归档",
+        short: "最终结果和工具痕迹写回 session，必要时做 memory consolidation。",
+        module: "SessionManager + MemoryStore",
+        lead: "当前轮的 user / assistant / tool 消息会写入 JSONL；超过窗口后，旧消息会被归档到 `MEMORY.md` 和 `HISTORY.md`。",
+        input: "本轮完整 `messages[]`。",
+        mutate: "session JSONL 更新，`updated_at` 刷新；必要时启动 consolidation。",
+        output: "持久化后的新 session 状态。",
+        files: ["nanobot/agent/loop.py", "nanobot/session/manager.py", "nanobot/agent/memory.py"],
+        board: {
+          "Channel": "无变化。",
+          "MessageBus": "无变化。",
+          "Session": "本轮消息落盘到 `sessions/*.jsonl`。",
+          "Prompt": "为下轮对话准备新的历史基线。",
+          "LLM": "本轮调用结束。",
+          "Tool": "工具结果可能被截断后保存。",
+          "Outbound": "最终回复待发送。",
+          "Persistence": "可能更新 `MEMORY.md` / `HISTORY.md`。"
+        }
+      },
+      {
+        id: 9,
+        mode: "main",
+        layer: "出站总线",
+        tag: "outbound",
+        title: "回复写入 Outbound 队列",
+        short: "Agent 生成 `OutboundMessage`，等待具体渠道发送。",
+        module: "MessageBus + ChannelManager",
+        lead: "Agent 核心不直接依赖具体平台 SDK，而是把回复先写回 `bus.outbound`，再由 `ChannelManager` 根据 `channel` 做路由。",
+        input: "`OutboundMessage`。",
+        mutate: "`outbound` 队列长度 +1；如果是进度消息会附带 `_progress` 元数据。",
+        output: "对应渠道的 `send()` 被触发。",
+        files: ["nanobot/bus/queue.py", "nanobot/channels/manager.py", "nanobot/agent/tools/message.py"],
+        board: {
+          "Channel": "找到目标渠道实例。",
+          "MessageBus": "`outbound` 队列新增消息。",
+          "Session": "已完成保存。",
+          "Prompt": "本轮已结束。",
+          "LLM": "不再参与。",
+          "Tool": "`message` 工具和普通回复共享同一出站通路。",
+          "Outbound": "等待渠道发送。",
+          "Persistence": "无额外变化。"
+        }
+      },
+      {
+        id: 10,
+        mode: "main",
+        layer: "回发层",
+        tag: "reply",
+        title: "Channel 回发给用户",
+        short: "具体渠道把消息真正发回终端或聊天平台。",
+        module: "各平台 send() / WhatsApp Bridge",
+        lead: "Telegram、Slack、Discord、Email 等各自实现发送；WhatsApp 需要先发给本地 Node bridge，再由 bridge 调 Baileys 发回 WhatsApp。",
+        input: "`OutboundMessage`。",
+        mutate: "渠道 SDK 或本地 bridge 执行真实发送；用户侧看到回复。",
+        output: "一轮完整对话闭环完成。",
+        files: ["nanobot/channels/telegram.py", "nanobot/channels/whatsapp.py", "bridge/src/server.ts"],
+        board: {
+          "Channel": "平台收到最终回复或流式进度消息。",
+          "MessageBus": "该条 `outbound` 被消费。",
+          "Session": "等待下一轮用户输入。",
+          "Prompt": "等待新一轮构造。",
+          "LLM": "空闲。",
+          "Tool": "无变化。",
+          "Outbound": "发送完成。",
+          "Persistence": "无文件变化。"
+        }
+      }
+    ];
+
+    const boardOrder = ["Channel", "MessageBus", "Session", "Prompt", "LLM", "Tool", "Outbound", "Persistence"];
+    const timelineEl = document.getElementById("timeline");
+    const changeGrid = document.getElementById("changeGrid");
+    const detailMeta = document.getElementById("detailMeta");
+    const detailTitle = document.getElementById("detailTitle");
+    const detailLead = document.getElementById("detailLead");
+    const fileList = document.getElementById("fileList");
+    const boardGrid = document.getElementById("boardGrid");
+    const progressFill = document.getElementById("progressFill");
+    const stepCounter = document.getElementById("stepCounter");
+    const stepLayer = document.getElementById("stepLayer");
+    const chips = [...document.querySelectorAll(".chip")];
+
+    let currentMode = "main";
+    let filteredSteps = [];
+    let currentIndex = 0;
+    let timer = null;
+
+    function buildSteps() {
+      timelineEl.innerHTML = "";
+      filteredSteps = currentMode === "main"
+        ? steps.filter((step) => step.mode === "main")
+        : steps;
+      timelineEl.style.setProperty("--step-count", String(filteredSteps.length));
+
+      filteredSteps.forEach((step, index) => {
+        const item = document.createElement("button");
+        item.className = `step actionless ${step.mode === "optional" ? "optional" : ""}`;
+        item.type = "button";
+        item.dataset.index = String(index);
+        item.innerHTML = `
+          <div class="step-num">${String(index + 1).padStart(2, "0")}</div>
+          <div class="step-tag">${step.layer}</div>
+          <h3>${step.title}</h3>
+          <p>${step.short}</p>
+          <code>${step.module}</code>
+        `;
+        item.addEventListener("click", () => setCurrent(index, true));
+        timelineEl.appendChild(item);
+      });
+
+      if (currentIndex >= filteredSteps.length) currentIndex = 0;
+      render();
+    }
+
+    function render() {
+      const current = filteredSteps[currentIndex];
+      const stepNodes = [...timelineEl.children];
+
+      stepNodes.forEach((node, index) => {
+        node.classList.toggle("active", index === currentIndex);
+      });
+
+      detailMeta.innerHTML = "";
+      [
+        `Step ${currentIndex + 1}`,
+        current.layer,
+        current.module
+      ].forEach((text) => {
+        const el = document.createElement("span");
+        el.className = "pill";
+        el.textContent = text;
+        detailMeta.appendChild(el);
+      });
+
+      detailTitle.textContent = current.title;
+      detailLead.textContent = current.lead;
+
+      changeGrid.innerHTML = "";
+      [
+        ["输入", current.input],
+        ["内部变化", current.mutate],
+        ["输出", current.output]
+      ].forEach(([label, value]) => {
+        const block = document.createElement("div");
+        block.className = "change";
+        block.innerHTML = `<strong>${label}</strong><p>${value}</p>`;
+        changeGrid.appendChild(block);
+      });
+
+      fileList.innerHTML = "";
+      current.files.forEach((name) => {
+        const el = document.createElement("span");
+        el.className = "file";
+        el.textContent = name;
+        fileList.appendChild(el);
+      });
+
+      boardGrid.innerHTML = "";
+      boardOrder.forEach((key) => {
+        const box = document.createElement("div");
+        box.className = "state-box";
+        box.innerHTML = `<h3>${key}</h3><p>${current.board[key]}</p>`;
+        boardGrid.appendChild(box);
+      });
+
+      stepCounter.textContent = `Step ${currentIndex + 1} / ${filteredSteps.length}`;
+      stepLayer.textContent = current.layer;
+      progressFill.style.width = `${((currentIndex + 1) / filteredSteps.length) * 100}%`;
+
+      stepNodes[currentIndex]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+      });
+    }
+
+    function setCurrent(index, stopAuto = false) {
+      currentIndex = (index + filteredSteps.length) % filteredSteps.length;
+      if (stopAuto) stopAutoPlay();
+      render();
+    }
+
+    function nextStep() {
+      setCurrent(currentIndex + 1);
+    }
+
+    function prevStep() {
+      setCurrent(currentIndex - 1, true);
+    }
+
+    function startAutoPlay() {
+      if (timer) return;
+      document.getElementById("playBtn").textContent = "暂停播放";
+      timer = setInterval(() => {
+        currentIndex = (currentIndex + 1) % filteredSteps.length;
+        render();
+      }, 2500);
+    }
+
+    function stopAutoPlay() {
+      if (!timer) return;
+      clearInterval(timer);
+      timer = null;
+      document.getElementById("playBtn").textContent = "自动播放";
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      stopAutoPlay();
+      nextStep();
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", prevStep);
+
+    document.getElementById("playBtn").addEventListener("click", () => {
+      if (timer) {
+        stopAutoPlay();
+      } else {
+        startAutoPlay();
+      }
+    });
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const mode = chip.dataset.mode;
+        if (mode === currentMode) return;
+        chips.forEach((node) => node.classList.toggle("active", node === chip));
+        currentMode = mode;
+        currentIndex = 0;
+        stopAutoPlay();
+        buildSteps();
+      });
+    });
+
+    buildSteps();
+  </script>
+</body>
 </html>
