@@ -662,10 +662,13 @@ function buildSourceCard(source, activeDomain, index = 0) {
 }
 
 function buildVideoStage(source) {
-  const stage = document.createElement("div");
-  stage.className = `video-stage${source.videoUrl ? " has-link" : ""}`;
+  const stage = document.createElement(source.videoUrl ? "a" : "div");
+  stage.className = `video-stage${source.videoUrl ? " has-link is-clickable" : ""}`;
 
   if (source.videoUrl) {
+    stage.href = source.videoUrl;
+    stage.target = "_blank";
+    stage.rel = "noreferrer";
     const domain = safeUrlHost(source.videoUrl);
     stage.innerHTML = `
       <div class="video-stage-top">
@@ -678,9 +681,9 @@ function buildVideoStage(source) {
           <h3>${escapeHtml(source.videoType || "未分类视频")}</h3>
           <p>以源视频为中心聚合 ${source.assets.length} 张资产卡</p>
         </div>
-        <a class="link-chip" href="${escapeAttribute(source.videoUrl)}" target="_blank" rel="noreferrer">
+        <span class="link-chip">
           打开 video_url
-        </a>
+        </span>
       </div>
     `;
     return stage;

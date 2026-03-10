@@ -450,6 +450,22 @@ code {
   box-shadow: inset 0 0 0 1px rgba(255, 248, 238, 0.06);
 }
 
+.video-stage.is-clickable {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.video-stage.is-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 238, 0.06),
+    0 18px 34px rgba(0, 0, 0, 0.16);
+}
+
+.video-stage.is-clickable:hover .play-orb {
+  transform: scale(1.06);
+}
+
 .video-stage::after {
   content: "";
   position: absolute;
