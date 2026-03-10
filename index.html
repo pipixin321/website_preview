@@ -3,192 +3,160 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>西班牙 5.1 - 5.6 旅行规划</title>
+  <title>website_preview 已部署站点</title>
   <style>
     :root {
-      --bg: #f9f5ef;
-      --bg-accent: #e6efe4;
+      --bg: #f3efe7;
+      --panel: rgba(255, 255, 255, 0.82);
       --ink: #1d2433;
       --muted: #5f6673;
-      --brand: #d1495b;
-      --brand-deep: #9f2d3a;
-      --sun: #f7c663;
-      --card: rgba(255, 255, 255, 0.86);
       --line: rgba(29, 36, 51, 0.12);
-      --ok: #2b7a4b;
-      --shadow: 0 12px 40px rgba(36, 26, 14, 0.12);
+      --accent: #b44f35;
+      --accent-2: #1b6b75;
+      --shadow: 0 16px 48px rgba(35, 29, 20, 0.12);
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      color: var(--ink);
-      font-family: "Source Han Serif SC", "Noto Serif SC", "STSong", "Songti SC", serif;
-      background:
-        radial-gradient(circle at 8% 12%, rgba(247, 198, 99, 0.28), transparent 24%),
-        radial-gradient(circle at 88% 10%, rgba(209, 73, 91, 0.18), transparent 28%),
-        linear-gradient(160deg, var(--bg) 0%, #fff 36%, var(--bg-accent) 100%);
       min-height: 100vh;
+      color: var(--ink);
+      font-family: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(180, 79, 53, 0.16), transparent 28%),
+        radial-gradient(circle at 90% 12%, rgba(27, 107, 117, 0.16), transparent 24%),
+        linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
     }
 
     .wrap {
-      width: min(1100px, 92vw);
+      width: min(1120px, calc(100% - 32px));
       margin: 0 auto;
       padding: 36px 0 56px;
     }
 
-    .hero {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(125deg, #fff5e7 0%, #fff 45%, #eef7ed 100%);
+    .hero,
+    .card {
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 24px;
-      padding: 32px;
       box-shadow: var(--shadow);
-      animation: rise 0.7s ease both;
+      backdrop-filter: blur(10px);
     }
 
-    .hero::after {
-      content: "Madrid · Mallorca";
-      position: absolute;
-      right: -14px;
-      top: 18px;
-      transform: rotate(8deg);
-      font-size: 0.8rem;
+    .hero {
+      padding: 32px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
       padding: 6px 12px;
       border-radius: 999px;
-      color: #fff;
-      background: linear-gradient(90deg, var(--brand), var(--brand-deep));
-      letter-spacing: 1px;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      background: rgba(27, 107, 117, 0.1);
     }
 
     h1 {
+      margin: 14px 0 12px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.02;
+    }
+
+    .hero p {
       margin: 0;
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      line-height: 1.2;
-    }
-
-    .subtitle {
-      margin: 10px 0 0;
+      max-width: 64ch;
       color: var(--muted);
-      font-size: 1.05rem;
-    }
-
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .chip {
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.72);
-      font-size: 0.9rem;
+      line-height: 1.7;
+      font-size: 1.02rem;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
       margin-top: 22px;
     }
 
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      background: var(--card);
-      backdrop-filter: blur(2px);
-      box-shadow: 0 10px 20px rgba(24, 29, 38, 0.05);
-      animation: rise 0.6s ease both;
+    .card {
+      padding: 22px;
     }
 
-    .panel h2 {
-      margin: 0 0 10px;
-      font-size: 1.15rem;
-    }
-
-    .panel p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-
-    .timeline {
-      margin-top: 26px;
-      display: grid;
-      gap: 14px;
-    }
-
-    .day {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      display: grid;
-      grid-template-columns: 110px 1fr;
-      gap: 14px;
-      box-shadow: 0 10px 22px rgba(24, 29, 38, 0.07);
-      animation: rise 0.6s ease both;
-    }
-
-    .date {
-      border-right: 1px dashed rgba(29, 36, 51, 0.22);
-      padding-right: 10px;
-    }
-
-    .date strong {
-      display: block;
-      font-size: 1.2rem;
-    }
-
-    .date span {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-
-    .loc {
+    .kicker {
       display: inline-block;
-      font-size: 0.82rem;
-      margin-bottom: 8px;
-      padding: 3px 10px;
+      margin-bottom: 10px;
+      padding: 4px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(43, 122, 75, 0.25);
-      color: var(--ok);
-      background: rgba(43, 122, 75, 0.08);
+      font-size: 0.78rem;
+      color: var(--accent);
+      background: rgba(180, 79, 53, 0.1);
     }
 
-    .slots {
+    .card h2 {
       margin: 0;
-      padding-left: 1.05rem;
-      line-height: 1.5;
+      font-size: 1.25rem;
+      line-height: 1.35;
     }
 
-    .slots li + li { margin-top: 4px; }
-
-    .foot {
-      margin-top: 18px;
+    .card p {
+      margin: 12px 0 0;
       color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .meta {
+      margin-top: 16px;
       font-size: 0.9rem;
+      color: var(--muted);
     }
 
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
     }
 
-    @media (max-width: 840px) {
-      .grid { grid-template-columns: 1fr; }
-      .day { grid-template-columns: 1fr; }
-      .date {
-        border-right: 0;
-        border-bottom: 1px dashed rgba(29, 36, 51, 0.2);
-        padding-right: 0;
-        padding-bottom: 8px;
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 124px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: transform 180ms ease;
+    }
+
+    a.button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      color: #fff;
+      background: linear-gradient(90deg, var(--accent), #ce7456);
+    }
+
+    .note {
+      margin-top: 20px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: 1px dashed rgba(29, 36, 51, 0.18);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.55);
+      line-height: 1.7;
+    }
+
+    code {
+      font-family: "SF Mono", "IBM Plex Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -196,121 +164,50 @@
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>西班牙 6 天轻松游：马德里 + 马略卡岛</h1>
-      <p class="subtitle">出行日期：2026 年 5 月 1 日 - 5 月 6 日（5 月 3 日 - 5 月 5 日在马略卡岛，其余时间在马德里）</p>
-      <div class="meta">
-        <span class="chip">节奏：文化 + 海岛度假</span>
-        <span class="chip">城市：马德里 / 帕尔马</span>
-        <span class="chip">建议交通：西班牙国内航班往返</span>
-      </div>
+      <span class="eyebrow">Deployment Archive</span>
+      <h1>已部署站点已整理为独立子目录。</h1>
+      <p>
+        这个入口页用于保留和导航历史部署内容。后续新网站应新增到 <code>/sites/&lt;site-slug&gt;/</code>，
+        不能覆盖现有目录里的任何文件。
+      </p>
     </section>
 
     <section class="grid">
-      <article class="panel">
-        <h2>路线概览</h2>
-        <p>5.1 抵达马德里并适应时差；5.2 深度逛艺术区与老城。5.3 早班机前往马略卡岛（帕尔马），5.3-5.5 以海岸风光与慢节奏休闲为主，5.5 晚间返回马德里。5.6 在马德里收尾购物和返程。</p>
-      </article>
-      <article class="panel">
-        <h2>预算参考（人均）</h2>
-        <p>中等预算约 1100-1600 欧元（含 5 晚住宿、餐饮、景点、马德里↔马略卡往返机票与市内交通）。提前 6-8 周预订可显著降低机酒成本。</p>
-      </article>
-    </section>
-
-    <section class="timeline">
-      <article class="day">
-        <div class="date">
-          <strong>5.1</strong>
-          <span>第 1 天</span>
-        </div>
-        <div>
-          <span class="loc">马德里 Madrid</span>
-          <ul class="slots">
-            <li>上午/下午：抵达马德里，入住太阳门/格兰大道附近酒店。</li>
-            <li>傍晚：丽池公园散步，阿尔卡拉门打卡。</li>
-            <li>晚上：在拉丁区吃 Tapas（推荐烤章鱼、伊比利亚火腿、海鲜饭）。</li>
-          </ul>
+      <article class="card">
+        <span class="kicker">2026-03-10</span>
+        <h2>西班牙 6 天轻松游</h2>
+        <p>马德里与马略卡岛双城路线，包含节奏、预算和逐日行程安排。</p>
+        <p class="meta">目录：<code>/sites/spain-travel-plan/</code></p>
+        <div class="actions">
+          <a class="button primary" href="./sites/spain-travel-plan/">打开站点</a>
         </div>
       </article>
 
-      <article class="day">
-        <div class="date">
-          <strong>5.2</strong>
-          <span>第 2 天</span>
-        </div>
-        <div>
-          <span class="loc">马德里 Madrid</span>
-          <ul class="slots">
-            <li>上午：普拉多博物馆（建议提前预约早场门票）。</li>
-            <li>中午：圣米格尔市场品尝当地小吃。</li>
-            <li>下午：马德里王宫 + 阿穆德纳大教堂。</li>
-            <li>晚上：格兰大道看夜景，可安排弗拉明戈表演。</li>
-          </ul>
+      <article class="card">
+        <span class="kicker">2026-03-10</span>
+        <h2>nanobot 消息全流程可视化</h2>
+        <p>面向流程展示的长页，解释从用户发消息到机器人回消息的完整链路。</p>
+        <p class="meta">目录：<code>/sites/nanobot-message-flow/</code></p>
+        <div class="actions">
+          <a class="button primary" href="./sites/nanobot-message-flow/">打开站点</a>
         </div>
       </article>
 
-      <article class="day">
-        <div class="date">
-          <strong>5.3</strong>
-          <span>第 3 天</span>
-        </div>
-        <div>
-          <span class="loc">马略卡岛 Mallorca</span>
-          <ul class="slots">
-            <li>上午：马德里飞帕尔马（飞行约 1 小时 20 分），落地后租车或公交进城。</li>
-            <li>中午：帕尔马老城午餐，尝试 Ensaimada 甜点。</li>
-            <li>下午：帕尔马主教座堂 + 海滨大道散步。</li>
-            <li>晚上：港口餐厅看日落，适合海鲜晚餐。</li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="day">
-        <div class="date">
-          <strong>5.4</strong>
-          <span>第 4 天</span>
-        </div>
-        <div>
-          <span class="loc">马略卡岛 Mallorca</span>
-          <ul class="slots">
-            <li>全天海岸线日：推荐 Valldemossa + Deià 小镇（山海景非常经典）。</li>
-            <li>如偏好海滩：改去 Cala Major 或 Es Trenc 泳滩放松。</li>
-            <li>晚上：回帕尔马老城晚餐，逛小巷酒吧。</li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="day">
-        <div class="date">
-          <strong>5.5</strong>
-          <span>第 5 天</span>
-        </div>
-        <div>
-          <span class="loc">马略卡岛 → 马德里</span>
-          <ul class="slots">
-            <li>上午：贝尔维尔城堡或海边早午餐，预留轻松活动。</li>
-            <li>下午：自由购物（橄榄油、海盐、皮具等本地特产）。</li>
-            <li>傍晚/晚上：帕尔马飞回马德里，入住机场快线或市中心便利酒店。</li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="day">
-        <div class="date">
-          <strong>5.6</strong>
-          <span>第 6 天</span>
-        </div>
-        <div>
-          <span class="loc">马德里 Madrid</span>
-          <ul class="slots">
-            <li>上午：伯纳乌球场（球迷向）或丽池公园划船（二选一）。</li>
-            <li>中午：在萨拉曼卡区吃告别午餐。</li>
-            <li>下午：英格列斯百货或机场退税准备，按航班时间返程。</li>
-          </ul>
+      <article class="card">
+        <span class="kicker">Starter</span>
+        <h2>Static Site Starter</h2>
+        <p>最初的静态模板起点，保留为后续快速起步和对照使用。</p>
+        <p class="meta">目录：<code>/sites/static-site-starter/</code></p>
+        <div class="actions">
+          <a class="button primary" href="./sites/static-site-starter/">打开站点</a>
         </div>
       </article>
     </section>
 
-    <p class="foot">小贴士：西班牙 5 月白天温暖、昼夜温差较大，建议带薄外套；马略卡若租车请尽早预定并确认停车条件。</p>
+    <section class="note">
+      当前整理策略：历史站点已按提交记录恢复到独立子目录，根目录只保留导航入口。
+      以后如果再新增部署，只能新建目录，不能修改这些已归档目录里的文件。
+    </section>
   </main>
 </body>
 </html>

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>西班牙 5.1 - 5.6 旅行规划</title>
+  <style>
+    :root {
+      --bg: #f9f5ef;
+      --bg-accent: #e6efe4;
+      --ink: #1d2433;
+      --muted: #5f6673;
+      --brand: #d1495b;
+      --brand-deep: #9f2d3a;
+      --sun: #f7c663;
+      --card: rgba(255, 255, 255, 0.86);
+      --line: rgba(29, 36, 51, 0.12);
+      --ok: #2b7a4b;
+      --shadow: 0 12px 40px rgba(36, 26, 14, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Han Serif SC", "Noto Serif SC", "STSong", "Songti SC", serif;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(247, 198, 99, 0.28), transparent 24%),
+        radial-gradient(circle at 88% 10%, rgba(209, 73, 91, 0.18), transparent 28%),
+        linear-gradient(160deg, var(--bg) 0%, #fff 36%, var(--bg-accent) 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(1100px, 92vw);
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(125deg, #fff5e7 0%, #fff 45%, #eef7ed 100%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      animation: rise 0.7s ease both;
+    }
+
+    .hero::after {
+      content: "Madrid · Mallorca";
+      position: absolute;
+      right: -14px;
+      top: 18px;
+      transform: rotate(8deg);
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(90deg, var(--brand), var(--brand-deep));
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 0.9rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: var(--card);
+      backdrop-filter: blur(2px);
+      box-shadow: 0 10px 20px rgba(24, 29, 38, 0.05);
+      animation: rise 0.6s ease both;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .timeline {
+      margin-top: 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .day {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 14px;
+      box-shadow: 0 10px 22px rgba(24, 29, 38, 0.07);
+      animation: rise 0.6s ease both;
+    }
+
+    .date {
+      border-right: 1px dashed rgba(29, 36, 51, 0.22);
+      padding-right: 10px;
+    }
+
+    .date strong {
+      display: block;
+      font-size: 1.2rem;
+    }
+
+    .date span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .loc {
+      display: inline-block;
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(43, 122, 75, 0.25);
+      color: var(--ok);
+      background: rgba(43, 122, 75, 0.08);
+    }
+
+    .slots {
+      margin: 0;
+      padding-left: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .slots li + li { margin-top: 4px; }
+
+    .foot {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 840px) {
+      .grid { grid-template-columns: 1fr; }
+      .day { grid-template-columns: 1fr; }
+      .date {
+        border-right: 0;
+        border-bottom: 1px dashed rgba(29, 36, 51, 0.2);
+        padding-right: 0;
+        padding-bottom: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>西班牙 6 天轻松游：马德里 + 马略卡岛</h1>
+      <p class="subtitle">出行日期：2026 年 5 月 1 日 - 5 月 6 日（5 月 3 日 - 5 月 5 日在马略卡岛，其余时间在马德里）</p>
+      <div class="meta">
+        <span class="chip">节奏：文化 + 海岛度假</span>
+        <span class="chip">城市：马德里 / 帕尔马</span>
+        <span class="chip">建议交通：西班牙国内航班往返</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>路线概览</h2>
+        <p>5.1 抵达马德里并适应时差；5.2 深度逛艺术区与老城。5.3 早班机前往马略卡岛（帕尔马），5.3-5.5 以海岸风光与慢节奏休闲为主，5.5 晚间返回马德里。5.6 在马德里收尾购物和返程。</p>
+      </article>
+      <article class="panel">
+        <h2>预算参考（人均）</h2>
+        <p>中等预算约 1100-1600 欧元（含 5 晚住宿、餐饮、景点、马德里↔马略卡往返机票与市内交通）。提前 6-8 周预订可显著降低机酒成本。</p>
+      </article>
+    </section>
+
+    <section class="timeline">
+      <article class="day">
+        <div class="date">
+          <strong>5.1</strong>
+          <span>第 1 天</span>
+        </div>
+        <div>
+          <span class="loc">马德里 Madrid</span>
+          <ul class="slots">
+            <li>上午/下午：抵达马德里，入住太阳门/格兰大道附近酒店。</li>
+            <li>傍晚：丽池公园散步，阿尔卡拉门打卡。</li>
+            <li>晚上：在拉丁区吃 Tapas（推荐烤章鱼、伊比利亚火腿、海鲜饭）。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="date">
+          <strong>5.2</strong>
+          <span>第 2 天</span>
+        </div>
+        <div>
+          <span class="loc">马德里 Madrid</span>
+          <ul class="slots">
+            <li>上午：普拉多博物馆（建议提前预约早场门票）。</li>
+            <li>中午：圣米格尔市场品尝当地小吃。</li>
+            <li>下午：马德里王宫 + 阿穆德纳大教堂。</li>
+            <li>晚上：格兰大道看夜景，可安排弗拉明戈表演。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="date">
+          <strong>5.3</strong>
+          <span>第 3 天</span>
+        </div>
+        <div>
+          <span class="loc">马略卡岛 Mallorca</span>
+          <ul class="slots">
+            <li>上午：马德里飞帕尔马（飞行约 1 小时 20 分），落地后租车或公交进城。</li>
+            <li>中午：帕尔马老城午餐，尝试 Ensaimada 甜点。</li>
+            <li>下午：帕尔马主教座堂 + 海滨大道散步。</li>
+            <li>晚上：港口餐厅看日落，适合海鲜晚餐。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="date">
+          <strong>5.4</strong>
+          <span>第 4 天</span>
+        </div>
+        <div>
+          <span class="loc">马略卡岛 Mallorca</span>
+          <ul class="slots">
+            <li>全天海岸线日：推荐 Valldemossa + Deià 小镇（山海景非常经典）。</li>
+            <li>如偏好海滩：改去 Cala Major 或 Es Trenc 泳滩放松。</li>
+            <li>晚上：回帕尔马老城晚餐，逛小巷酒吧。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="date">
+          <strong>5.5</strong>
+          <span>第 5 天</span>
+        </div>
+        <div>
+          <span class="loc">马略卡岛 → 马德里</span>
+          <ul class="slots">
+            <li>上午：贝尔维尔城堡或海边早午餐，预留轻松活动。</li>
+            <li>下午：自由购物（橄榄油、海盐、皮具等本地特产）。</li>
+            <li>傍晚/晚上：帕尔马飞回马德里，入住机场快线或市中心便利酒店。</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="date">
+          <strong>5.6</strong>
+          <span>第 6 天</span>
+        </div>
+        <div>
+          <span class="loc">马德里 Madrid</span>
+          <ul class="slots">
+            <li>上午：伯纳乌球场（球迷向）或丽池公园划船（二选一）。</li>
+            <li>中午：在萨拉曼卡区吃告别午餐。</li>
+            <li>下午：英格列斯百货或机场退税准备，按航班时间返程。</li>
+          </ul>
+        </div>
+      </article>
+    </section>
+
+    <p class="foot">小贴士：西班牙 5 月白天温暖、昼夜温差较大，建议带薄外套；马略卡若租车请尽早预定并确认停车条件。</p>
+  </main>
+</body>
+</html>
