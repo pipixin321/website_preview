@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>视频资产理解&转化可视化看板</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Video Asset Atlas</p>
+          <h1>视频资产理解&转化可视化看板</h1>
+          <p class="hero-text">
+            拖拽 CSV 后，页面会按 <code>来源ID / source_id</code> 聚合资产，共用源视频视图展示
+            <code>story</code>、<code>show</code>、<code>topic</code>、<code>persona</code>、
+            <code>knowledge</code> 五类资产，并将视频理解内容转化为可筛选、可浏览、可比对的资产卡片。
+          </p>
+        </div>
+        <div class="hero-actions">
+          <label class="dropzone" id="dropzone" for="file-input">
+            <input id="file-input" type="file" accept=".csv,text/csv" hidden />
+            <span class="dropzone-title">拖拽 CSV 到这里</span>
+            <span class="dropzone-subtitle">或者点击选择文件</span>
+          </label>
+          <div class="action-row">
+            <button id="load-sample" class="ghost-button" type="button">载入测试数据</button>
+            <button id="clear-data" class="ghost-button" type="button">清空当前数据</button>
+          </div>
+          <p class="helper-text" id="file-status">尚未载入数据</p>
+        </div>
+      </header>
+
+      <main class="dashboard hidden" id="dashboard">
+        <section class="summary-grid" id="summary-grid"></section>
+
+        <section class="control-panel">
+          <div class="search-box">
+            <label for="search-input">搜索源视频 / 资产文本</label>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="输入来源ID、视频分类、标题、话题等关键词"
+            />
+          </div>
+          <div class="filter-grid">
+            <div class="filter-block">
+              <span class="filter-label">视频分类</span>
+              <div class="chip-row" id="video-type-filters"></div>
+            </div>
+            <div class="filter-block">
+              <span class="filter-label">资产域</span>
+              <div class="chip-row" id="domain-filters"></div>
+            </div>
+            <div class="filter-block">
+              <span class="filter-label">风险标签</span>
+              <div class="chip-row" id="risk-filters"></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input id="verification-only" type="checkbox" />
+              <span>仅看含待验证 knowledge 的源视频</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="source-list" id="source-list"></section>
+      </main>
+
+      <section class="empty-state" id="empty-state">
+        <div class="empty-panel">
+          <p class="eyebrow">Source-Centric View</p>
+          <h2>先上传一份资产 CSV</h2>
+          <p>
+            页面会把同一个 <code>source_id</code> 的资产自动聚合到同一张源视频母卡里，并在右侧资产舞台切换不同卡片类型。
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="detail-drawer" id="detail-drawer" aria-hidden="true">
+      <div class="drawer-backdrop" id="drawer-backdrop"></div>
+      <div class="drawer-panel">
+        <button class="drawer-close" id="drawer-close" type="button" aria-label="关闭详情">
+          ×
+        </button>
+        <div id="drawer-content"></div>
+      </div>
+    </aside>
+
+    <template id="summary-card-template">
+      <article class="summary-card">
+        <p class="summary-label"></p>
+        <p class="summary-value"></p>
+        <p class="summary-meta"></p>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
