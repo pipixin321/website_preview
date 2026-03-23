@@ -233,6 +233,7 @@ code {
 
 .ghost-button,
 .filter-chip,
+.version-tab,
 .domain-tab,
 .asset-badge,
 .status-pill,
@@ -254,6 +255,7 @@ code {
 
 .ghost-button:hover,
 .filter-chip:hover,
+.version-tab:hover,
 .domain-tab:hover,
 .asset-card:hover,
 .link-chip:hover {
@@ -262,6 +264,7 @@ code {
 
 .ghost-button,
 .filter-chip,
+.version-tab,
 .domain-tab,
 .asset-card,
 .link-chip,
@@ -571,6 +574,7 @@ code {
 
 .meta-cluster,
 .status-cluster,
+.version-tabs,
 .domain-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -643,8 +647,46 @@ code {
 
 .asset-stage {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
+}
+
+.version-tabs {
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -2px;
+  padding-right: 6px;
+}
+
+.version-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(220px, 100%);
+  min-height: 34px;
+  padding: 0.22rem 0.72rem;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 252, 246, 0.76);
+  color: var(--muted);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  line-height: 1;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.version-tab.active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), #cf825f);
+  box-shadow: 0 6px 14px rgba(191, 91, 43, 0.14);
 }
 
 .domain-tabs {

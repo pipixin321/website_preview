@@ -17,7 +17,7 @@ const DOMAIN_TITLES = {
 };
 
 const state = {
-  fileName: "",
+  fileNames: [],
   rawRows: [],
   sources: [],
   filters: {
@@ -28,6 +28,7 @@ const state = {
     verificationOnly: false,
   },
   activeDomains: {},
+  activeVersions: {},
   drawer: null,
 };
 
@@ -86,16 +87,16 @@ function bindUpload() {
   elements.dropzone.addEventListener("drop", (event) => {
     event.preventDefault();
     elements.dropzone.classList.remove("is-dragging");
-    const [file] = event.dataTransfer.files;
-    if (file) {
-      loadFile(file);
+    const files = Array.from(event.dataTransfer.files || []);
+    if (files.length) {
+      loadFiles(files);
     }
   });
 
   elements.fileInput.addEventListener("change", (event) => {
-    const [file] = event.target.files;
-    if (file) {
-      loadFile(file);
+    const files = Array.from(event.target.files || []);
+    if (files.length) {
+      loadFiles(files);
     }
   });
 
@@ -106,7 +107,7 @@ function bindUpload() {
         throw new Error(`HTTP ${response.status}`);
       }
       const text = await response.text();
-      hydrateFromCsv(text, "test_csv.csv");
+      hydrateFromCsvFiles([{ text, fileName: "test_csv.csv" }]);
     } catch (error) {
       elements.fileStatus.textContent =
         "测试数据加载失败。若是直接打开 HTML 文件，请改用拖拽 CSV 方式。";
@@ -115,10 +116,11 @@ function bindUpload() {
   });
 
   elements.clearData.addEventListener("click", () => {
-    state.fileName = "";
+    state.fileNames = [];
     state.rawRows = [];
     state.sources = [];
     state.activeDomains = {};
+    state.activeVersions = {};
     state.drawer = null;
     resetFilters();
     elements.fileInput.value = "";
@@ -147,26 +149,43 @@ function bindControls() {
   });
 }
 
-async function loadFile(file) {
-  const text = await file.text();
-  hydrateFromCsv(text, file.name);
+async function loadFiles(files) {
+  const payloads = await Promise.all(
+    files.map(async (file) => ({
+      fileName: file.name,
+      text: await file.text(),
+    }))
+  );
+  hydrateFromCsvFiles(payloads);
 }
 
-function hydrateFromCsv(text, fileName) {
-  const rows = parseCsv(text).map(normalizeRow).filter((row) => row.sourceId);
+function hydrateFromCsvFiles(filePayloads) {
+  const rows = filePayloads
+    .flatMap(({ text, fileName }) =>
+      parseCsv(text).map((row, index) => normalizeRow(row, index, fileName))
+    )
+    .filter((row) => row.sourceId);
   resetFilters();
-  state.fileName = fileName;
+  state.fileNames = filePayloads.map((item) => item.fileName);
   state.rawRows = rows;
   state.sources = groupRowsBySource(rows);
   state.activeDomains = {};
+  state.activeVersions = {};
   state.drawer = null;
 
   state.sources.forEach((source) => {
-    state.activeDomains[source.sourceId] = source.domainOrder[0] || "story";
+    const defaultVersion = source.versionOrder[source.versionOrder.length - 1] || "";
+    const versionData = findVersionByName(source, defaultVersion);
+    state.activeVersions[source.sourceId] = versionData?.versionName || "";
+    state.activeDomains[source.sourceId] = versionData?.domainOrder[0] || "story";
   });
 
-  elements.fileStatus.textContent = `${fileName} 已载入，共 ${rows.length} 条资产记录`;
+  elements.fileStatus.textContent = `已载入 ${filePayloads.length} 个版本文件，共 ${rows.length} 条资产记录，覆盖 ${state.sources.length} 个源视频`;
   render();
+  requestAnimationFrame(() => {
+    renderSources();
+    renderDrawer();
+  });
 }
 
 function parseCsv(text) {
@@ -228,7 +247,7 @@ function parseCsv(text) {
   });
 }
 
-function normalizeRow(row, index) {
+function normalizeRow(row, index, versionName) {
   const assetFields = parseAssetContent(row["资产内容"] || "");
   const skillFit = parseListish(row["技能匹配"]);
   const triggerFit = parseListish(row["触发时机"]);
@@ -239,7 +258,8 @@ function normalizeRow(row, index) {
   const videoUrl = (row["视频链接"] || "").trim();
 
   return {
-    id: `${row["来源ID"] || "source"}-${index}`,
+    id: `${versionName}-${row["来源ID"] || "source"}-${index}`,
+    versionName,
     authorId: (row["作者ID"] || "").trim(),
     authorProfile: (row["作者人设"] || "").trim(),
     sourceType: (row["来源类型"] || "").trim() || "unknown",
@@ -382,36 +402,56 @@ function groupRowsBySource(rows) {
   const sources = new Map();
 
   rows.forEach((row) => {
-    const existing = sources.get(row.sourceId) || createEmptySource(row);
-    existing.videoUrl = existing.videoUrl || row.videoUrl;
-    existing.authorId = existing.authorId || row.authorId;
-    existing.authorProfile = existing.authorProfile || row.authorProfile;
-    existing.sourceType = existing.sourceType || row.sourceType;
-    existing.videoType = existing.videoType || row.videoType;
-    existing.understandingText = pickLongerText(existing.understandingText, row.understandingText);
-    existing.userQueries = mergeUniqueStrings(existing.userQueries, row.userQueries);
-    existing.assets.push(row);
-    row.riskTags.forEach((tag) => existing.riskTags.add(tag));
+    const existing = sources.get(row.sourceId) || createEmptySourceGroup(row);
+    if (!existing.versionMap[row.versionName]) {
+      existing.versionMap[row.versionName] = createEmptyVersionSource(row);
+      existing.versionOrder.push(row.versionName);
+    }
+    const versionSource = existing.versionMap[row.versionName];
+    versionSource.videoUrl = versionSource.videoUrl || row.videoUrl;
+    versionSource.authorId = versionSource.authorId || row.authorId;
+    versionSource.authorProfile = versionSource.authorProfile || row.authorProfile;
+    versionSource.sourceType = versionSource.sourceType || row.sourceType;
+    versionSource.videoType = versionSource.videoType || row.videoType;
+    versionSource.understandingText = pickLongerText(
+      versionSource.understandingText,
+      row.understandingText
+    );
+    versionSource.userQueries = mergeUniqueStrings(versionSource.userQueries, row.userQueries);
+    versionSource.assets.push(row);
+    row.riskTags.forEach((tag) => versionSource.riskTags.add(tag));
     if (row.needsVerification) {
-      existing.hasVerificationNeed = true;
+      versionSource.hasVerificationNeed = true;
     }
     sources.set(row.sourceId, existing);
   });
 
   return Array.from(sources.values())
-    .map((source) => finalizeSource(source))
+    .map((source) => finalizeSourceGroup(source))
     .sort((left, right) => {
-      const sourceTypePriority = compareSourceTypePriority(left.sourceType, right.sourceType);
+      const sourceTypePriority = compareSourceTypePriority(
+        left.primaryVersion?.sourceType,
+        right.primaryVersion?.sourceType
+      );
       if (sourceTypePriority !== 0) {
         return sourceTypePriority;
       }
-      return right.assets.length - left.assets.length;
+      return right.totalAssets - left.totalAssets;
     });
 }
 
-function createEmptySource(row) {
+function createEmptySourceGroup(row) {
   return {
     sourceId: row.sourceId,
+    versionMap: {},
+    versionOrder: [],
+  };
+}
+
+function createEmptyVersionSource(row) {
+  return {
+    sourceId: row.sourceId,
+    versionName: row.versionName,
     authorId: row.authorId,
     authorProfile: row.authorProfile,
     sourceType: row.sourceType,
@@ -425,7 +465,32 @@ function createEmptySource(row) {
   };
 }
 
-function finalizeSource(source) {
+function finalizeSourceGroup(source) {
+  const versionMap = {};
+  source.versionOrder.forEach((versionName) => {
+    versionMap[versionName] = finalizeVersionSource(source.versionMap[versionName]);
+  });
+
+  const primaryVersion = versionMap[source.versionOrder[source.versionOrder.length - 1]] || null;
+  const searchableText = source.versionOrder
+    .map((versionName) => versionMap[versionName]?.searchableText || "")
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    sourceId: source.sourceId,
+    versionMap,
+    versionOrder: source.versionOrder,
+    primaryVersion,
+    totalAssets: source.versionOrder.reduce(
+      (sum, versionName) => sum + (versionMap[versionName]?.assets.length || 0),
+      0
+    ),
+    searchableText,
+  };
+}
+
+function finalizeVersionSource(source) {
   const domainMap = {};
   DOMAIN_ORDER.forEach((domain) => {
     domainMap[domain] = [];
@@ -491,6 +556,99 @@ function mergeUniqueStrings(current = [], incoming = []) {
   );
 }
 
+function findVersionByName(source, versionName) {
+  if (!source) {
+    return null;
+  }
+
+  if (versionName && source.versionMap[versionName]) {
+    return source.versionMap[versionName];
+  }
+
+  const fallbackVersion = source.versionOrder[source.versionOrder.length - 1] || source.versionOrder[0];
+  return fallbackVersion ? source.versionMap[fallbackVersion] || null : null;
+}
+
+function versionMatchesFilters(version) {
+  if (!version) {
+    return false;
+  }
+
+  const search = state.filters.search.toLowerCase();
+  if (search && !version.searchableText.includes(search)) {
+    return false;
+  }
+
+  if (state.filters.videoType !== "全部" && version.videoType !== state.filters.videoType) {
+    return false;
+  }
+
+  if (
+    state.filters.domain !== "全部" &&
+    !(version.domainMap[state.filters.domain] && version.domainMap[state.filters.domain].length)
+  ) {
+    return false;
+  }
+
+  if (state.filters.risk !== "全部" && !version.riskTagList.includes(state.filters.risk)) {
+    return false;
+  }
+
+  if (state.filters.verificationOnly && !version.hasVerificationNeed) {
+    return false;
+  }
+
+  return true;
+}
+
+function hasActiveFilters() {
+  return Boolean(
+    state.filters.search ||
+      state.filters.videoType !== "全部" ||
+      state.filters.domain !== "全部" ||
+      state.filters.risk !== "全部" ||
+      state.filters.verificationOnly
+  );
+}
+
+function resolveVisibleVersion(source) {
+  const activeVersion = findVersionByName(source, state.activeVersions[source.sourceId]);
+  if (!hasActiveFilters()) {
+    return activeVersion;
+  }
+  if (versionMatchesFilters(activeVersion)) {
+    return activeVersion;
+  }
+
+  for (let index = source.versionOrder.length - 1; index >= 0; index -= 1) {
+    const versionName = source.versionOrder[index];
+    const candidate = source.versionMap[versionName];
+    if (versionMatchesFilters(candidate)) {
+      state.activeVersions[source.sourceId] = versionName;
+      return candidate;
+    }
+  }
+
+  return activeVersion || findVersionByName(source);
+}
+
+function syncSourceSelection(source) {
+  const activeVersion = resolveVisibleVersion(source);
+  if (!activeVersion) {
+    return { activeVersion: null, activeDomain: "" };
+  }
+
+  state.activeVersions[source.sourceId] = activeVersion.versionName;
+  const activeDomain =
+    state.activeDomains[source.sourceId] &&
+    activeVersion.domainOrder.includes(state.activeDomains[source.sourceId])
+      ? state.activeDomains[source.sourceId]
+      : activeVersion.domainOrder[0] || "";
+  state.activeDomains[source.sourceId] = activeDomain;
+
+  return { activeVersion, activeDomain };
+}
+
 function summarizeText(text, maxLength) {
   const compact = (text || "")
     .replace(/^#+\s*/gm, "")
@@ -524,10 +682,18 @@ function render() {
   const hasData = state.sources.length > 0;
   elements.dashboard.classList.toggle("hidden", !hasData);
   elements.emptyState.classList.toggle("hidden", hasData);
-  renderSummary();
-  renderFilters();
-  renderSources();
-  renderDrawer();
+  runRenderStep(renderSources, "renderSources");
+  runRenderStep(renderSummary, "renderSummary");
+  runRenderStep(renderFilters, "renderFilters");
+  runRenderStep(renderDrawer, "renderDrawer");
+}
+
+function runRenderStep(step, label) {
+  try {
+    step();
+  } catch (error) {
+    console.error(`[${label}]`, error);
+  }
 }
 
 function renderSummary() {
@@ -536,34 +702,42 @@ function renderSummary() {
     return;
   }
 
-  const missingVideoSources = state.sources.filter((source) => !source.videoUrl).length;
-  const sourcesWithUserQueries = state.sources.filter((source) => source.userQueries.length).length;
+  const allVersions = state.sources.flatMap((source) =>
+    source.versionOrder.map((versionName) => source.versionMap[versionName])
+  );
+  const missingVideoSources = allVersions.filter((source) => !source.videoUrl).length;
+  const sourcesWithUserQueries = allVersions.filter((source) => source.userQueries.length).length;
   const summaryItems = [
     {
       label: "源视频",
       value: state.sources.length,
-      meta: `${state.fileName || "当前数据"} 中按 source_id 聚合后的母卡数量`,
+      meta: `${state.fileNames.length || 0} 个版本文件按 source_id 聚合后的母卡数量`,
+    },
+    {
+      label: "版本文件",
+      value: state.fileNames.length,
+      meta: state.fileNames.join(" / ") || "当前未载入版本文件",
     },
     {
       label: "资产总数",
       value: state.rawRows.length,
-      meta: `平均每个源视频 ${(state.rawRows.length / state.sources.length).toFixed(1)} 张资产卡`,
+      meta: `平均每个源视频 ${(state.rawRows.length / state.sources.length).toFixed(1)} 张版本化资产卡`,
     },
     {
-      label: "待验证源视频",
-      value: state.sources.filter((source) => source.hasVerificationNeed).length,
+      label: "待验证版本",
+      value: allVersions.filter((source) => source.hasVerificationNeed).length,
       meta: "至少包含一张 needs_verification 为 True 的 knowledge 卡",
     },
     {
-      label: "缺视频链接",
+      label: "缺视频链接版本",
       value: missingVideoSources,
-      meta: "这些源视频会回退为抽象视频舞台，不依赖 video_url",
+      meta: "这些版本会回退为抽象视频舞台，不依赖 video_url",
     },
     {
-      label: "查询覆盖源视频",
+      label: "查询覆盖版本",
       value: sourcesWithUserQueries,
       meta: sourcesWithUserQueries
-        ? `平均每个命中源视频 ${(state.sources.reduce((sum, source) => sum + source.userQueries.length, 0) / sourcesWithUserQueries).toFixed(1)} 条用户查询`
+        ? `平均每个命中版本 ${(allVersions.reduce((sum, source) => sum + source.userQueries.length, 0) / sourcesWithUserQueries).toFixed(1)} 条用户查询`
         : "当前数据中还没有 user_queries / 用户查询 字段内容",
     },
   ];
@@ -615,12 +789,24 @@ function renderChipGroup(container, values, activeValue, onSelect) {
 }
 
 function uniqueVideoTypes() {
-  return Array.from(new Set(state.sources.map((source) => source.videoType))).sort();
+  return Array.from(
+    new Set(
+      state.sources.flatMap((source) =>
+        source.versionOrder.map((versionName) => source.versionMap[versionName].videoType)
+      )
+    )
+  ).sort();
 }
 
 function uniqueRiskTags() {
   return Array.from(
-    new Set(state.sources.flatMap((source) => source.riskTagList).filter(Boolean))
+    new Set(
+      state.sources
+        .flatMap((source) =>
+          source.versionOrder.flatMap((versionName) => source.versionMap[versionName].riskTagList)
+        )
+        .filter(Boolean)
+    )
   ).sort();
 }
 
@@ -641,44 +827,24 @@ function renderSources() {
   }
 
   filteredSources.forEach((source, index) => {
-    const activeDomain =
-      state.activeDomains[source.sourceId] && source.domainOrder.includes(state.activeDomains[source.sourceId])
-        ? state.activeDomains[source.sourceId]
-        : source.domainOrder[0];
-    state.activeDomains[source.sourceId] = activeDomain;
-    elements.sourceList.appendChild(buildSourceCard(source, activeDomain, index));
+    const { activeVersion, activeDomain } = syncSourceSelection(source);
+    if (!activeVersion) {
+      return;
+    }
+    elements.sourceList.appendChild(buildSourceCard(source, activeVersion, activeDomain, index));
   });
 }
 
 function matchesFilters(source) {
-  const search = state.filters.search.toLowerCase();
-  if (search && !source.searchableText.includes(search)) {
-    return false;
+  if (!hasActiveFilters()) {
+    return true;
   }
-
-  if (state.filters.videoType !== "全部" && source.videoType !== state.filters.videoType) {
-    return false;
-  }
-
-  if (
-    state.filters.domain !== "全部" &&
-    !(source.domainMap[state.filters.domain] && source.domainMap[state.filters.domain].length)
-  ) {
-    return false;
-  }
-
-  if (state.filters.risk !== "全部" && !source.riskTagList.includes(state.filters.risk)) {
-    return false;
-  }
-
-  if (state.filters.verificationOnly && !source.hasVerificationNeed) {
-    return false;
-  }
-
-  return true;
+  return source.versionOrder.some((versionName) =>
+    versionMatchesFilters(source.versionMap[versionName])
+  );
 }
 
-function buildSourceCard(source, activeDomain, index = 0) {
+function buildSourceCard(source, activeVersion, activeDomain, index = 0) {
   const card = document.createElement("article");
   card.className = "source-card fade-in";
   card.dataset.sourceId = source.sourceId;
@@ -686,28 +852,29 @@ function buildSourceCard(source, activeDomain, index = 0) {
 
   const videoPanel = document.createElement("section");
   videoPanel.className = "video-panel";
-  videoPanel.appendChild(buildVideoStage(source));
-  videoPanel.appendChild(buildVideoMeta(source));
+  videoPanel.appendChild(buildVideoStage(activeVersion));
+  videoPanel.appendChild(buildVideoMeta(source, activeVersion));
 
   const assetStage = document.createElement("section");
   assetStage.className = "asset-stage";
-  assetStage.appendChild(buildDomainTabs(source, activeDomain));
-  assetStage.appendChild(buildAssetStagePanel(source, activeDomain));
+  assetStage.appendChild(buildVersionTabs(source, activeVersion.versionName));
+  assetStage.appendChild(buildDomainTabs(source.sourceId, activeVersion, activeDomain));
+  assetStage.appendChild(buildAssetStagePanel(activeVersion, activeDomain));
 
   card.appendChild(videoPanel);
   card.appendChild(assetStage);
   return card;
 }
 
-function buildVideoStage(source) {
-  const stage = document.createElement(source.videoUrl ? "a" : "div");
-  stage.className = `video-stage${source.videoUrl ? " has-link is-clickable" : ""}`;
+function buildVideoStage(version) {
+  const stage = document.createElement(version.videoUrl ? "a" : "div");
+  stage.className = `video-stage${version.videoUrl ? " has-link is-clickable" : ""}`;
 
-  if (source.videoUrl) {
-    stage.href = source.videoUrl;
+  if (version.videoUrl) {
+    stage.href = version.videoUrl;
     stage.target = "_blank";
     stage.rel = "noreferrer";
-    const domain = safeUrlHost(source.videoUrl);
+    const domain = safeUrlHost(version.videoUrl);
     stage.innerHTML = `
       <div class="video-stage-top">
         <span class="video-tagline">Source Video Spotlight</span>
@@ -716,8 +883,8 @@ function buildVideoStage(source) {
       <div class="play-orb">▶</div>
       <div class="video-stage-bottom">
         <div>
-          <h3>${escapeHtml(source.videoType || "未分类视频")}</h3>
-          <p>以源视频为中心聚合 ${source.assets.length} 张资产卡</p>
+          <h3>${escapeHtml(version.videoType || "未分类视频")}</h3>
+          <p>当前版本聚合 ${version.assets.length} 张资产卡</p>
         </div>
         <span class="link-chip">
           打开 video_url
@@ -737,18 +904,19 @@ function buildVideoStage(source) {
   return stage;
 }
 
-function buildVideoMeta(source) {
+function buildVideoMeta(source, version) {
   const wrapper = document.createElement("div");
   wrapper.innerHTML = `
     <div class="source-header">
       <div>
         <h3 class="source-title">来源 ${escapeHtml(source.sourceId)}</h3>
-        <p class="source-subtitle">${escapeHtml(source.videoType)} · ${escapeHtml(source.sourceType)}</p>
+        <p class="source-subtitle">${escapeHtml(version.videoType)} · ${escapeHtml(version.sourceType)}</p>
       </div>
       <div class="status-cluster">
-        <span class="status-pill">${source.assets.length} 张资产</span>
+        <span class="status-pill">${version.assets.length} 张资产</span>
+        <span class="status-pill">${escapeHtml(version.versionName)}</span>
         ${
-          source.hasVerificationNeed
+          version.hasVerificationNeed
             ? '<span class="status-pill">含待验证 knowledge</span>'
             : ""
         }
@@ -757,32 +925,32 @@ function buildVideoMeta(source) {
     <dl class="source-meta">
       <div>
         <dt>作者 ID</dt>
-        <dd>${escapeHtml(source.authorId || "未知")}</dd>
+        <dd>${escapeHtml(version.authorId || "未知")}</dd>
       </div>
       <div>
         <dt>资产域覆盖</dt>
-        <dd>${escapeHtml(source.domainOrder.map((domain) => DOMAIN_LABELS[domain]).join(" / "))}</dd>
+        <dd>${escapeHtml(version.domainOrder.map((domain) => DOMAIN_LABELS[domain]).join(" / "))}</dd>
       </div>
     </dl>
     <div class="meta-cluster">
-      ${source.riskTagList.length ? source.riskTagList.map((tag) => `<span class="asset-badge">${escapeHtml(tag)}</span>`).join("") : '<span class="asset-badge">无风险标签</span>'}
+      ${version.riskTagList.length ? version.riskTagList.map((tag) => `<span class="asset-badge">${escapeHtml(tag)}</span>`).join("") : '<span class="asset-badge">无风险标签</span>'}
     </div>
     ${
-      source.userQueries.length
+      version.userQueries.length
         ? `
           <div class="query-preview-block">
             <div class="query-preview-header">
               <strong>用户查询</strong>
-              <span class="query-preview-meta">${source.userQueries.length} 条</span>
+              <span class="query-preview-meta">${version.userQueries.length} 条</span>
             </div>
             <div class="meta-cluster">
-              ${source.userQueries
+              ${version.userQueries
                 .slice(0, 6)
                 .map((query) => `<span class="asset-badge">${escapeHtml(query)}</span>`)
                 .join("")}
               ${
-                source.userQueries.length > 6
-                  ? `<span class="asset-badge">+${source.userQueries.length - 6}</span>`
+                version.userQueries.length > 6
+                  ? `<span class="asset-badge">+${version.userQueries.length - 6}</span>`
                   : ""
               }
             </div>
@@ -791,32 +959,39 @@ function buildVideoMeta(source) {
         : ""
     }
     <div class="understanding-preview-block">
-      <p class="understanding-snippet">${escapeHtml(source.understandingPreview || "暂无理解文本")}</p>
-      <button class="link-chip understanding-trigger" type="button" data-source-id="${escapeAttribute(source.sourceId)}">
+      <p class="understanding-snippet">${escapeHtml(version.understandingPreview || "暂无理解文本")}</p>
+      <button class="link-chip understanding-trigger" type="button" data-source-id="${escapeAttribute(source.sourceId)}" data-version-name="${escapeAttribute(version.versionName)}">
         查看完整理解内容
       </button>
     </div>
   `;
   wrapper
     .querySelector(".understanding-trigger")
-    .addEventListener("click", () => openUnderstandingDrawer(source.sourceId));
+    .addEventListener("click", () => openUnderstandingDrawer(source.sourceId, version.versionName));
   return wrapper;
 }
 
-function buildDomainTabs(source, activeDomain) {
+function buildVersionTabs(source, activeVersion) {
   const tabs = document.createElement("div");
-  tabs.className = "domain-tabs";
+  tabs.className = "version-tabs";
 
-  source.domainOrder.forEach((domain) => {
-    const count = source.domainMap[domain].length;
+  source.versionOrder.forEach((versionName) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `domain-tab${domain === activeDomain ? " active" : ""}`;
-    button.dataset.domain = domain;
-    button.textContent = `${DOMAIN_LABELS[domain]} ${count}`;
+    button.className = `version-tab${versionName === activeVersion ? " active" : ""}`;
+    button.dataset.versionName = versionName;
+    button.textContent = versionName;
     button.addEventListener("click", () => {
-      state.activeDomains[source.sourceId] = domain;
-      switchSourceDomain(source.sourceId, domain);
+      state.activeVersions[source.sourceId] = versionName;
+      const versionData = findVersionByName(source, versionName);
+      if (versionData && !versionData.domainOrder.includes(state.activeDomains[source.sourceId])) {
+        state.activeDomains[source.sourceId] = versionData.domainOrder[0] || "story";
+      }
+      if (state.drawer?.type === "understanding" && state.drawer.id === source.sourceId) {
+        state.drawer.versionName = versionName;
+      }
+      renderSources();
+      renderDrawer();
     });
     tabs.appendChild(button);
   });
@@ -824,22 +999,44 @@ function buildDomainTabs(source, activeDomain) {
   return tabs;
 }
 
-function buildAssetStagePanel(source, activeDomain) {
+function buildDomainTabs(sourceId, version, activeDomain) {
+  const tabs = document.createElement("div");
+  tabs.className = "domain-tabs";
+
+  version.domainOrder.forEach((domain) => {
+    const count = version.domainMap[domain].length;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `domain-tab${domain === activeDomain ? " active" : ""}`;
+    button.dataset.domain = domain;
+    button.textContent = `${DOMAIN_LABELS[domain]} ${count}`;
+    button.addEventListener("click", () => {
+      state.activeDomains[sourceId] = domain;
+      switchSourceDomain(sourceId, domain);
+    });
+    tabs.appendChild(button);
+  });
+
+  return tabs;
+}
+
+function buildAssetStagePanel(version, activeDomain) {
   const panel = document.createElement("div");
   panel.className = "asset-stage-panel";
   const track = document.createElement("div");
   track.className = "asset-stage-track";
-  track.dataset.sourceId = source.sourceId;
+  track.dataset.sourceId = version.sourceId;
+  track.dataset.versionName = version.versionName;
 
-  source.domainOrder.forEach((domain) => {
+  version.domainOrder.forEach((domain) => {
     const page = document.createElement("section");
     page.className = "asset-domain-page";
     page.dataset.domain = domain;
-    page.appendChild(buildAssetGrid(source.domainMap[domain], domain, source));
+    page.appendChild(buildAssetGrid(version.domainMap[domain], domain, version));
     track.appendChild(page);
   });
 
-  const activeIndex = source.domainOrder.indexOf(activeDomain);
+  const activeIndex = version.domainOrder.indexOf(activeDomain);
   track.style.transform = `translateX(-${Math.max(activeIndex, 0) * 100}%)`;
 
   panel.appendChild(track);
@@ -848,10 +1045,11 @@ function buildAssetStagePanel(source, activeDomain) {
 
 function switchSourceDomain(sourceId, domain) {
   const source = findSourceById(sourceId);
+  const version = resolveVisibleVersion(source);
   const card = elements.sourceList.querySelector(
     `[data-source-id="${escapeAttribute(sourceId)}"]`
   );
-  if (!source || !card) {
+  if (!source || !version || !card) {
     renderSources();
     return;
   }
@@ -867,7 +1065,7 @@ function switchSourceDomain(sourceId, domain) {
     return;
   }
 
-  const activeIndex = source.domainOrder.indexOf(domain);
+  const activeIndex = version.domainOrder.indexOf(domain);
   track.style.transform = `translateX(-${Math.max(activeIndex, 0) * 100}%)`;
 }
 
@@ -926,8 +1124,8 @@ function openAssetDrawer(assetId) {
   renderDrawer();
 }
 
-function openUnderstandingDrawer(sourceId) {
-  state.drawer = { type: "understanding", id: sourceId };
+function openUnderstandingDrawer(sourceId, versionName) {
+  state.drawer = { type: "understanding", id: sourceId, versionName };
   renderDrawer();
 }
 
@@ -940,7 +1138,13 @@ function renderDrawer() {
   const payload = state.drawer;
   const asset = payload?.type === "asset" ? findAssetById(payload.id) : null;
   const source = payload?.type === "understanding" ? findSourceById(payload.id) : asset ? findSourceById(asset.sourceId) : null;
-  const open = Boolean(asset || source);
+  const version =
+    payload?.type === "understanding"
+      ? findVersionByName(source, payload.versionName)
+      : asset
+        ? findVersionByName(source, asset.versionName)
+        : null;
+  const open = Boolean(asset || version);
   elements.detailDrawer.classList.toggle("open", open);
   elements.detailDrawer.setAttribute("aria-hidden", String(!open));
   elements.drawerContent.innerHTML = "";
@@ -949,8 +1153,8 @@ function renderDrawer() {
     return;
   }
 
-  if (payload?.type === "understanding" && source) {
-    renderUnderstandingDrawer(source);
+  if (payload?.type === "understanding" && source && version) {
+    renderUnderstandingDrawer(source, version);
     return;
   }
 
@@ -959,6 +1163,7 @@ function renderDrawer() {
     <div class="drawer-topline">
       <span class="status-pill">${DOMAIN_TITLES[asset.assetDomain]}</span>
       <span class="status-pill">${escapeHtml(asset.videoType)}</span>
+      <span class="status-pill">${escapeHtml(asset.versionName)}</span>
       <span class="status-pill">来源 ${escapeHtml(asset.sourceId)}</span>
     </div>
     <h3 class="drawer-title">${escapeHtml(asset.title)}</h3>
@@ -983,8 +1188,8 @@ function renderDrawer() {
       <dl class="detail-kv">
         <dt>源视频链接</dt>
         <dd>${
-          source && source.videoUrl
-            ? `<a href="${escapeAttribute(source.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(source.videoUrl)}</a>`
+          version && version.videoUrl
+            ? `<a href="${escapeAttribute(version.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(version.videoUrl)}</a>`
             : "无可用 video_url"
         }</dd>
       </dl>
@@ -994,45 +1199,46 @@ function renderDrawer() {
   `;
 }
 
-function renderUnderstandingDrawer(source) {
+function renderUnderstandingDrawer(source, version) {
   elements.drawerContent.innerHTML = `
     <div class="drawer-topline">
       <span class="status-pill">完整理解内容</span>
-      <span class="status-pill">${escapeHtml(source.videoType)}</span>
-      <span class="status-pill">${escapeHtml(source.sourceType)}</span>
+      <span class="status-pill">${escapeHtml(version.videoType)}</span>
+      <span class="status-pill">${escapeHtml(version.sourceType)}</span>
+      <span class="status-pill">${escapeHtml(version.versionName)}</span>
     </div>
     <h3 class="drawer-title">来源 ${escapeHtml(source.sourceId)}</h3>
     <p class="hero-text">这里展示该源视频聚合卡对应的完整理解文本。内容较长时可在卡片内部滚动查看。</p>
     <section class="detail-section">
       <h4>完整理解文本</h4>
-      <div class="understanding-fulltext">${escapeHtml(source.understandingTextFormatted || "暂无理解文本")}</div>
+      <div class="understanding-fulltext">${escapeHtml(version.understandingTextFormatted || "暂无理解文本")}</div>
     </section>
     <section class="detail-section">
       <h4>上下文信息</h4>
       <div class="detail-grid">
         <dl class="detail-kv">
           <dt>作者 ID</dt>
-          <dd>${escapeHtml(source.authorId || "未知")}</dd>
+          <dd>${escapeHtml(version.authorId || "未知")}</dd>
         </dl>
         <dl class="detail-kv">
           <dt>资产数量</dt>
-          <dd>${source.assets.length}</dd>
+          <dd>${version.assets.length}</dd>
         </dl>
         <dl class="detail-kv">
           <dt>资产域</dt>
-          <dd>${escapeHtml(source.domainOrder.map((domain) => DOMAIN_LABELS[domain]).join(" / "))}</dd>
+          <dd>${escapeHtml(version.domainOrder.map((domain) => DOMAIN_LABELS[domain]).join(" / "))}</dd>
         </dl>
         <dl class="detail-kv">
           <dt>视频链接</dt>
           <dd>${
-            source.videoUrl
-              ? `<a href="${escapeAttribute(source.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(source.videoUrl)}</a>`
+            version.videoUrl
+              ? `<a href="${escapeAttribute(version.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(version.videoUrl)}</a>`
               : "无可用 video_url"
           }</dd>
         </dl>
       </div>
     </section>
-    ${buildQuerySection("聚合用户查询", source.userQueries)}
+    ${buildQuerySection("聚合用户查询", version.userQueries)}
   `;
 }
 
@@ -1100,9 +1306,11 @@ function findAssetById(assetId) {
   }
 
   for (const source of state.sources) {
-    const asset = source.assets.find((item) => item.id === assetId);
-    if (asset) {
-      return asset;
+    for (const versionName of source.versionOrder) {
+      const asset = source.versionMap[versionName].assets.find((item) => item.id === assetId);
+      if (asset) {
+        return asset;
+      }
     }
   }
 

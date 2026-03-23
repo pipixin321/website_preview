@@ -13,16 +13,16 @@
           <p class="eyebrow">Video Asset Atlas</p>
           <h1>视频资产理解&转化可视化看板</h1>
           <p class="hero-text">
-            拖拽 CSV 后，页面会按 <code>来源ID / source_id</code> 聚合资产，共用源视频视图展示
+            拖拽一个或多个 CSV 后，页面会按 <code>来源ID / source_id</code> 聚合资产，共用源视频视图展示
             <code>story</code>、<code>show</code>、<code>topic</code>、<code>persona</code>、
-            <code>knowledge</code> 五类资产，并将视频理解内容转化为可筛选、可浏览、可比对的资产卡片。
+            <code>knowledge</code> 五类资产，并支持按文件名切换同一批源视频的不同版本资产。
           </p>
         </div>
         <div class="hero-actions">
           <label class="dropzone" id="dropzone" for="file-input">
-            <input id="file-input" type="file" accept=".csv,text/csv" hidden />
-            <span class="dropzone-title">拖拽 CSV 到这里</span>
-            <span class="dropzone-subtitle">或者点击选择文件</span>
+            <input id="file-input" type="file" accept=".csv,text/csv" multiple hidden />
+            <span class="dropzone-title">拖拽一个或多个 CSV 到这里</span>
+            <span class="dropzone-subtitle">或者点击一次选择多个版本文件</span>
           </label>
           <div class="action-row">
             <button id="load-sample" class="ghost-button" type="button">载入测试数据</button>
@@ -61,7 +61,7 @@
           <div class="toggle-row">
             <label class="toggle">
               <input id="verification-only" type="checkbox" />
-              <span>仅看含待验证 knowledge 的源视频</span>
+              <span>仅看含待验证 knowledge 的版本结果</span>
             </label>
           </div>
         </section>
@@ -72,9 +72,9 @@
       <section class="empty-state" id="empty-state">
         <div class="empty-panel">
           <p class="eyebrow">Source-Centric View</p>
-          <h2>先上传一份资产 CSV</h2>
+          <h2>先上传一份或多份资产 CSV</h2>
           <p>
-            页面会把同一个 <code>source_id</code> 的资产自动聚合到同一张源视频母卡里，并在右侧资产舞台切换不同卡片类型。
+            页面会把同一个 <code>source_id</code> 的资产自动聚合到同一张源视频母卡里，并支持按版本切换查看不同 CSV 的资产结果。
           </p>
         </div>
       </section>
