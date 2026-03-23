@@ -283,7 +283,7 @@ code {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 
@@ -601,6 +601,28 @@ code {
 .understanding-preview-block {
   display: grid;
   gap: 12px;
+}
+
+.query-preview-block {
+  display: grid;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.query-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.query-preview-header strong,
+.query-preview-meta {
+  font-size: 0.86rem;
+}
+
+.query-preview-meta {
+  color: var(--muted);
 }
 
 .understanding-snippet {

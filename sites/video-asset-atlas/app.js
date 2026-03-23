@@ -233,6 +233,9 @@ function normalizeRow(row, index) {
   const skillFit = parseListish(row["技能匹配"]);
   const triggerFit = parseListish(row["触发时机"]);
   const riskTags = parseListish(row["字段_risk_tags"]);
+  const userQueries = parseListish(
+    readAliasedValue(row, ["用户查询", "user_queries", "userQueries", "queries", "query"])
+  );
   const videoUrl = (row["视频链接"] || "").trim();
 
   return {
@@ -248,6 +251,7 @@ function normalizeRow(row, index) {
     skillFit,
     triggerFit,
     riskTags,
+    userQueries,
     assetContentRaw: (row["资产内容"] || "").trim(),
     assetFields,
     title: deriveAssetTitle((row["资产域"] || "").trim(), assetFields),
@@ -315,13 +319,25 @@ function parseListish(value) {
 
   try {
     const parsed = JSON.parse(text);
-    return Array.isArray(parsed) ? parsed : [String(parsed)];
+    return (Array.isArray(parsed) ? parsed : [String(parsed)])
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
   } catch (error) {
     return text
-      .split(/[;,]/)
+      .split(/[;,\n，；]/)
       .map((item) => item.trim())
       .filter(Boolean);
   }
+}
+
+function readAliasedValue(row, aliases) {
+  for (const alias of aliases) {
+    const value = row[alias];
+    if (value != null && String(value).trim()) {
+      return value;
+    }
+  }
+  return "";
 }
 
 function deriveAssetTitle(domain, fields) {
@@ -373,6 +389,7 @@ function groupRowsBySource(rows) {
     existing.sourceType = existing.sourceType || row.sourceType;
     existing.videoType = existing.videoType || row.videoType;
     existing.understandingText = pickLongerText(existing.understandingText, row.understandingText);
+    existing.userQueries = mergeUniqueStrings(existing.userQueries, row.userQueries);
     existing.assets.push(row);
     row.riskTags.forEach((tag) => existing.riskTags.add(tag));
     if (row.needsVerification) {
@@ -401,6 +418,7 @@ function createEmptySource(row) {
     videoUrl: row.videoUrl,
     videoType: row.videoType,
     understandingText: row.understandingText,
+    userQueries: row.userQueries.slice(),
     assets: [],
     riskTags: new Set(),
     hasVerificationNeed: false,
@@ -427,12 +445,14 @@ function finalizeSource(source) {
     source.videoType,
     source.authorId,
     source.understandingText,
+    source.userQueries.join(" "),
     ...source.assets.flatMap((asset) => [
       asset.title,
       asset.summary,
       asset.assetContentRaw,
       asset.skillFit.join(" "),
       asset.triggerFit.join(" "),
+      asset.userQueries.join(" "),
     ]),
   ]
     .join(" ")
@@ -459,6 +479,16 @@ function compareSourceTypePriority(left, right) {
 
 function pickLongerText(current, incoming) {
   return (incoming || "").length > (current || "").length ? incoming : current;
+}
+
+function mergeUniqueStrings(current = [], incoming = []) {
+  return Array.from(
+    new Set(
+      [...current, ...incoming]
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 function summarizeText(text, maxLength) {
@@ -507,6 +537,7 @@ function renderSummary() {
   }
 
   const missingVideoSources = state.sources.filter((source) => !source.videoUrl).length;
+  const sourcesWithUserQueries = state.sources.filter((source) => source.userQueries.length).length;
   const summaryItems = [
     {
       label: "源视频",
@@ -527,6 +558,13 @@ function renderSummary() {
       label: "缺视频链接",
       value: missingVideoSources,
       meta: "这些源视频会回退为抽象视频舞台，不依赖 video_url",
+    },
+    {
+      label: "查询覆盖源视频",
+      value: sourcesWithUserQueries,
+      meta: sourcesWithUserQueries
+        ? `平均每个命中源视频 ${(state.sources.reduce((sum, source) => sum + source.userQueries.length, 0) / sourcesWithUserQueries).toFixed(1)} 条用户查询`
+        : "当前数据中还没有 user_queries / 用户查询 字段内容",
     },
   ];
 
@@ -729,6 +767,29 @@ function buildVideoMeta(source) {
     <div class="meta-cluster">
       ${source.riskTagList.length ? source.riskTagList.map((tag) => `<span class="asset-badge">${escapeHtml(tag)}</span>`).join("") : '<span class="asset-badge">无风险标签</span>'}
     </div>
+    ${
+      source.userQueries.length
+        ? `
+          <div class="query-preview-block">
+            <div class="query-preview-header">
+              <strong>用户查询</strong>
+              <span class="query-preview-meta">${source.userQueries.length} 条</span>
+            </div>
+            <div class="meta-cluster">
+              ${source.userQueries
+                .slice(0, 6)
+                .map((query) => `<span class="asset-badge">${escapeHtml(query)}</span>`)
+                .join("")}
+              ${
+                source.userQueries.length > 6
+                  ? `<span class="asset-badge">+${source.userQueries.length - 6}</span>`
+                  : ""
+              }
+            </div>
+          </div>
+        `
+        : ""
+    }
     <div class="understanding-preview-block">
       <p class="understanding-snippet">${escapeHtml(source.understandingPreview || "暂无理解文本")}</p>
       <button class="link-chip understanding-trigger" type="button" data-source-id="${escapeAttribute(source.sourceId)}">
@@ -842,6 +903,9 @@ function buildAssetCardMarkup(asset, source) {
   if (asset.triggerFit.length) {
     footerPills.push(`<span class="mini-pill">${escapeHtml(asset.triggerFit[0])}</span>`);
   }
+  if (asset.userQueries.length) {
+    footerPills.push(`<span class="mini-pill">${asset.userQueries.length} 条 query</span>`);
+  }
   if (asset.assetDomain === "knowledge" && asset.needsVerification) {
     footerPills.push('<span class="mini-pill">needs verification</span>');
   }
@@ -913,6 +977,10 @@ function renderDrawer() {
         <dd>${escapeHtml(asset.riskTags.join(" / ") || "无")}</dd>
       </dl>
       <dl class="detail-kv">
+        <dt>用户查询</dt>
+        <dd>${escapeHtml(asset.userQueries.join(" / ") || "无")}</dd>
+      </dl>
+      <dl class="detail-kv">
         <dt>源视频链接</dt>
         <dd>${
           source && source.videoUrl
@@ -921,6 +989,7 @@ function renderDrawer() {
         }</dd>
       </dl>
     </div>
+    ${buildQuerySection("关联用户查询", asset.userQueries)}
     ${sections}
   `;
 }
@@ -963,6 +1032,7 @@ function renderUnderstandingDrawer(source) {
         </dl>
       </div>
     </section>
+    ${buildQuerySection("聚合用户查询", source.userQueries)}
   `;
 }
 
@@ -1009,6 +1079,19 @@ function stringifyValue(value) {
     return value;
   }
   return JSON.stringify(value, null, 2);
+}
+
+function buildQuerySection(title, queries) {
+  if (!queries.length) {
+    return "";
+  }
+
+  return `
+    <section class="detail-section">
+      <h4>${escapeHtml(title)}</h4>
+      <ul>${queries.map((query) => `<li>${escapeHtml(query)}</li>`).join("")}</ul>
+    </section>
+  `;
 }
 
 function findAssetById(assetId) {
