@@ -360,6 +360,20 @@ function readAliasedValue(row, aliases) {
   return "";
 }
 
+function readFirstNonEmptyField(fields, aliases) {
+  for (const alias of aliases) {
+    const value = fields[alias];
+    if (value == null) {
+      continue;
+    }
+    const text = typeof value === "string" ? value.trim() : String(value).trim();
+    if (text) {
+      return value;
+    }
+  }
+  return "";
+}
+
 function deriveAssetTitle(domain, fields) {
   if (domain === "story") {
     return fields.title || fields.core_point || "未命名 Story 资产";
@@ -368,7 +382,10 @@ function deriveAssetTitle(domain, fields) {
     return fields.highlight_summary || fields.pre_play_script || "未命名 Show 资产";
   }
   if (domain === "topic") {
-    return fields.topic_title || fields.opening_script || "未命名 Topic 资产";
+    return (
+      readFirstNonEmptyField(fields, ["title", "topic_title", "opening_script", "script"]) ||
+      "未命名 Topic 资产"
+    );
   }
   if (domain === "persona") {
     return fields.pattern_text || fields.pattern_type || "未命名 Persona 资产";
@@ -387,7 +404,7 @@ function deriveAssetSummary(domain, fields) {
     return fields.post_play_script || fields.talk_points || "";
   }
   if (domain === "topic") {
-    return fields.core_points || fields.followup_examples || "";
+    return readFirstNonEmptyField(fields, ["script", "core_points", "followup_examples", "opening_script"]);
   }
   if (domain === "persona") {
     return fields.usage_context || fields.example_usage || "";
